@@ -1,0 +1,54 @@
+#!/bin/dash
+#POSIX sh
+
+# check for the correct number of arguments
+if [ "$#" -ne 1 ]
+then
+    echo "usage: girt-show <commit>:<filename>"
+    exit
+fi
+
+# look if the command line argumet $1 has a valid structure
+if [ $(echo "$1" | grep -E -c ":") -ne 1 ]
+then
+    echo "$0: error: invalid object $1"
+    exit
+fi
+
+# save commit number in variable number and the filename in variable filename
+number=$(echo $1 | cut -d":" -f1)
+filename=$(echo $1 | cut -d":" -f2)
+
+# test if commit number is given; if not print from index
+if test -z "$number"
+then 
+    if [ -e ./.girt/index/$filename ] # 2>/dev/null
+    then
+        while read line
+        do
+            echo $line
+        done < ./.girt/index/$filename
+        exit
+    else # print error message in case file does not exist in index
+        echo "$0: error: '$filename' not found in index"
+        exit
+    fi
+fi
+
+# otherwise print from sprecified commit
+if [ -d ./.girt/commits/commit_$number ]
+then
+    if [ -e ./.girt/commits/commit_$number/$filename ]
+    then
+        while read line
+        do
+            echo $line
+        done < ./.girt/commits/commit_$number/$filename
+    else
+        echo "$0: error: '$filename' not found in commit $number"
+        exit
+    fi
+else
+    echo "$0: error: unknown commit '$number'"
+    exit
+fi

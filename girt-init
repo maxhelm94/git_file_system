@@ -1,0 +1,17 @@
+#!/bin/dash
+#POSIX sh
+
+# if [ ls -a | grep ".girt" ] 
+if [ -d '.girt' ]
+then
+    echo "$0: error: .girt already exists"
+    exit
+fi
+
+
+mkdir .girt
+mkdir .girt/index
+touch .girt/log.txt
+mkdir .girt/commits
+
+echo "Initialized empty girt repository in .girt"

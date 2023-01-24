@@ -1,0 +1,8 @@
+#!/bin/dash
+#POSIX sh
+
+# read and print each line of the log file
+while read line
+do
+    echo $line
+done < ./.girt/log.txt

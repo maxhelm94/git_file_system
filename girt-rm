@@ -1,0 +1,126 @@
+#!/bin/dash
+#POSIX sh
+
+# variables to keep track, which options are activated
+forced_option=0
+cached_option=0
+
+
+# check if girt-rm has the correct type of arguments
+
+if [ "$1" = "--force" -a "$2" = "--cached" ]
+then
+    forced_option=1
+    cached_option=1
+elif [ "$1" = "--force" ]
+then
+    forced_option=1
+elif [ "$1" = "--cached" ]
+then
+    cached_option=1
+elif [ $(echo "$1" | grep -E '\-\-' | wc -l ) -gt 0 ]
+then
+    echo "usage: girt-rm [--force] [--cached] <filenames>"
+elif [ $(echo "$2" | grep -E '\-\-' | wc -l ) -gt 0 ]
+then
+    echo "usage: girt-rm [--force] [--cached] <filenames>"
+fi
+
+# do this route if both options were not selected
+i=0
+if [ $forced_option -eq 0 -a $cached_option -eq 0 ]
+then
+    # check if all files are present in index
+    for file in $@
+    do
+        if [ ! -e ./.girt/index/$file ]
+        then
+            echo "./girt-rm: error: '$file' is not in the girt repository"
+            exit
+        fi
+
+    done
+    # check how many folders/commits are in the commit folder
+    i=$(ls -l ./.girt/commits | wc -l)
+    i=$((i - 2))
+    # check if all files are in the last repository
+    for file in $@
+    do
+        if [ $i -lt 0 ]
+        then
+            echo "./girt-rm: error: '$file' has staged changes in the index"
+            exit
+        fi
+        if [ ! -e ./.girt/commits/commit_${i} ]
+        then
+            echo "./girt-rm: error: '$file' has staged changes in the index"
+            exit
+        fi
+        if [ -e ./.girt/index/$file ]
+        then
+            rm ./.girt/index/$file
+        fi        
+        if [ -e $file ]
+        then
+            rm $file
+        fi
+    done
+fi
+
+# go this route if only --forced was activated
+if [ $forced_option -eq 1 -a $cached_option -eq 0 ]
+then
+    # check if all files are present in index
+    shift
+    for file in "$@"
+    do
+        if [ ! -e ./.girt/index/$file ]
+        then
+            echo "./girt-rm: error: '$file' is not in the girt repository"
+            exit
+        fi
+        if [ -e ./.girt/index/$file ]
+        then
+            rm ./.girt/index/$file
+        fi
+        if [ -e $file ]
+        then
+            rm $file
+        fi
+    done
+fi
+
+# go this route if only cached was activated
+if [ $forced_option -eq 0 -a $cached_option -eq 1 ]
+then
+    # check if all files are present in index
+    shift
+    for file in "$@"
+    do
+        if [ ! -e ./.girt/index/$file ]
+        then
+            echo "./girt-rm: error: '$file' is not in the girt repository"
+            exit
+        fi
+        rm ./.girt/index/$file
+    done
+fi
+
+# go this route if both options were activated
+if [ $forced_option -eq 1 -a $cached_option -eq 1 ]
+then
+    # check if all files are present in index
+    shift
+    shift
+    for file in "$@"
+    do
+        if [ ! -e ./.girt/index/$file ]
+        then
+            echo "./girt-rm: error: '$file' is not in the girt repository"
+            exit
+        fi
+        rm ./.girt/index/$file
+    done
+    
+fi
+

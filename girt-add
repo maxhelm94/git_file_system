@@ -1,0 +1,25 @@
+#!/bin/dash
+#POSIX sh
+
+# check if .girt folder is present/ if girt-init ran before
+if [ ! -d ".girt" 2>/dev/null ] 
+then
+    echo ""$0": error: girt repository directory .girt not found"
+    exit
+fi
+
+# copy each file into index
+for file in $@
+do
+    if [ -e "$file" ]
+    then
+        cp "$file" ./.girt/index/$file
+    else
+        if [ -e ./.girt/index/$file ]
+        then
+            rm ./.girt/index/$file
+        else
+        echo "$0: error: can not open '$file'"
+        fi
+    fi
+done

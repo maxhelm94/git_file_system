@@ -1,0 +1,93 @@
+#!/bin/dash
+#POSIX sh
+
+# check how many commits have been made previously
+i=$(ls -l ./.girt/commits | wc -l)
+i=$((i - 1))
+# make a new folder with the correct commit number
+mkdir ./.girt/commits/commit_$i
+
+# check if -a flag was activated
+if [ "$1" = "-a" ]
+then
+    # save the message in varaible m
+    m=$3
+    # loop through every file in the index and if present in the directory
+    # overwrite the version in the index
+    for file in ./.girt/index/*
+    do
+        filename=$(echo "$file" | cut -d'/' -f4)
+        if [ -e ./$filename ]
+        then
+            cp ./"$filename" ./.girt/index/"$filename"
+        fi
+    done
+else
+    m=$2
+fi
+
+# x counts the number of files in the index
+# z counts the number of files that are equal to the ones in the
+# previous commit
+x=0
+z=0
+j=$((i - 1))
+
+if [ $(ls -l ./.girt/index | wc -l ) -ne 1 ]
+then
+    for file2 in ./.girt/index/*
+    do
+        filename2=$(echo "$file2" | cut -d'/' -f4)
+        cp ./.girt/index/${filename2} ./.girt/commits/commit_${i} 2>/dev/null
+        x=$((x + 1))
+        
+        # check if previous commit contained the files that we commit now
+        if [ $i -ne 0 ] && [ -e ./.girt/commits/commit_${j}/${filename2} ] ;
+        then
+            # check if the files that were committed in the last commit are exactly the same as the
+            # ones that get committed now
+            DIFF=$( diff ./.girt/commits/commit_${i}/${filename2} ./.girt/commits/commit_${j}/${filename2} )
+            if [ "$DIFF" = "" ] ;
+            then 
+                z=$((z + 1))
+            fi
+        fi
+    done
+fi
+
+y=0
+# reverse check to make sure that there is no file in the previous commit that is
+# not in the new one
+if [ $i -ne 0 ] && [ $(ls -l ./.girt/commits/commit_${j} | wc -l ) -ne 1 ] 2>/dev/null
+then
+    for file3 in ./.girt/commits/commit_${j}/*
+    do
+        y=$((y + 1))
+    done
+fi
+
+# if the old commit is exactly the same as the new one, delete new commit
+# folder and exit
+if [ $x -eq $z ] && [ $x -eq $y ]
+then
+    rm -rf ./.girt/commits/commit_${i}
+    echo "nothing to commit"
+    exit
+fi
+
+
+# copy the commit number and message to the commit message text document
+im="${i} ${m}"
+echo "$im" >> ./.girt/log.txt
+
+#if [ $(grep -c [01] ./.girt/log.txt) -ne 0 ]
+if [ $i -ne 0 ]
+then
+    # move last line to first and save it in a temporary file
+    sed '1h;1d;$!H;$!d;G' ./.girt/log.txt > tmp.txt
+    # overwrite old log by tmp file
+    mv tmp.txt ./.girt/log.txt
+fi
+
+# print out success of commit
+echo "Committed as commit $i"
